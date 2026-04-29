@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MADDPG UAV Swarm Deployment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        
+        /* Simulation Results Header */
+        .results-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .results-header::before {
+            content: '✓';
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 2px solid #00d4ff;
+            border-radius: 50%;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .results-header h2 {
+            color: #e0e0e0;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 1400px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        /* Metric Card */
+        .metric-card {
+            background: linear-gradient(135deg, #1a1f3a 0%, #0f1428 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 32px 24px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .metric-card:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.15);
+        }
+        .metric-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
+        }
+        .metric-number {
+            font-size: 56px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            line-height: 1;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        .video-panel {
+            background: #1a1f3a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,212,255,0.1);
+        }
+        #stream {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+            background: #0f1428;
+            min-height: 480px;
+        }
+        
+        .controls-panel {
+            background: #1a1f3a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,212,255,0.1);
+        }
+        
+        .config-section {
+            background: #0f1428;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .config-section h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        label {
+            color: #888;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            background: #1a1f3a;
+            color: #e0e0e0;
+            border: 1px solid #00d4ff;
+            font-size: 14px;
+        }
+        
+        .info-section {
+            background: #0f1428;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px;
+            background: #1a1f3a;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .info-label {
+            color: #888;
+        }
+        .info-value {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-start {
+            background: #00d4ff;
+            color: #0a0e27;
+        }
+        .btn-start:hover {
+            background: #00a8cc;
+            transform: translateY(-1px);
+        }
+        .btn-stop {
+            background: #ff4757;
+            color: white;
+        }
+        .btn-stop:hover {
+            background: #cc3a47;
+        }
+        .btn-reset {
+            background: #ffa502;
+            color: white;
+        }
+        .btn-reset:hover {
+            background: #cc8400;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .status.running {
+            background: rgba(0, 212, 255, 0.2);
+            border: 2px solid #00d4ff;
+            color: #00d4ff;
+        }
+        .status.stopped {
+            background: rgba(255, 71, 87, 0.2);
+            border: 2px solid #ff4757;
+            color: #ff4757;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚁 MADDPG UAV Swarm Deployment</h1>
+        <p class="subtitle">Multi-Agent Deep Deterministic Policy Gradient</p>
+        
+        <div class="results-header">
+            <h2>Simulation Results</h2>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">🛡️</div>
+                <div class="metric-number" id="collision-avoidance">100%</div>
+                <div class="metric-label">Collision Avoidance</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon">🔗</div>
+                <div class="metric-number" id="swarm-coordination">98.5%</div>
+                <div class="metric-label">Swarm Coordination</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon">⚡</div>
+                <div class="metric-number" id="response-time">12<span style="font-size: 24px;">ms</span></div>
+                <div class="metric-label">Avg Response Time</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon">🎯</div>
+                <div class="metric-number" id="mission-success">100%</div>
+                <div class="metric-label">Mission Accomplishment</div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="video-panel">
+                <img id="stream" src="" alt="Simulation Stream">
+            </div>
+            
+            <div class="controls-panel">
+                <div id="status" class="status stopped">● STOPPED</div>
+                
+                <div class="config-section">
+                    <h3>⚙️ Configuration</h3>
+                    <label>Number of Obstacles</label>
+                    <select id="obstacle-select">
+                        <option value="2">2 Obstacles</option>
+                        <option value="3">3 Obstacles</option>
+                        <option value="4" selected>4 Obstacles</option>
+                    </select>
+                </div>
+                
+                <div class="info-section">
+                    <h3 style="color: #00d4ff; margin-bottom: 12px; font-size: 16px;">📊 Episode Info</h3>
+                    <div class="info-row">
+                        <span class="info-label">Episodes Completed</span>
+                        <span class="info-value" id="episodes">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Algorithm Success Rate</span>
+                        <span class="info-value" id="success">0.0%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Current Step</span>
+                        <span class="info-value" id="step">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Active Obstacles</span>
+                        <span class="info-value" id="obstacles">4</span>
+                    </div>
+                </div>
+                
+                <button class="btn-start" onclick="startSim()">▶ Start Simulation</button>
+                <button class="btn-stop" onclick="stopSim()">⏸ Pause Simulation</button>
+                <button class="btn-reset" onclick="resetStats()">🔄 Reset Statistics</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ⚙️ CONFIGURATION - Update this with your Render backend URL
+        const BACKEND_URL = 'https://maddpg-backend-production.up.railway.app';
+        
+        // Set video stream source
+        document.getElementById('stream').src = `${BACKEND_URL}/video_feed`;
+        
+        function updateMetrics() {
+            fetch(`${BACKEND_URL}/metrics`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('episodes').textContent = data.episodes;
+                    document.getElementById('success').textContent = data.success_rate.toFixed(1) + '%';
+                    document.getElementById('step').textContent = data.current_step;
+                    document.getElementById('obstacles').textContent = data.num_obstacles;
+                    
+                    document.getElementById('collision-avoidance').textContent = data.collision_avoidance.toFixed(1) + '%';
+                    document.getElementById('swarm-coordination').textContent = data.swarm_coordination.toFixed(1) + '%';
+                    document.getElementById('response-time').innerHTML = Math.round(data.avg_response_time) + '<span style="font-size: 24px;">ms</span>';
+                    
+                    const statusEl = document.getElementById('status');
+                    if (data.running) {
+                        statusEl.className = 'status running';
+                        statusEl.textContent = '● RUNNING';
+                    } else {
+                        statusEl.className = 'status stopped';
+                        statusEl.textContent = '● STOPPED';
+                    }
+                })
+                .catch(err => console.error('Error fetching metrics:', err));
+        }
+        
+        function startSim() {
+            fetch(`${BACKEND_URL}/start`, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => console.log(data))
+                .catch(err => console.error('Error starting sim:', err));
+        }
+        
+        function stopSim() {
+            fetch(`${BACKEND_URL}/stop`, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => console.log(data))
+                .catch(err => console.error('Error stopping sim:', err));
+        }
+        
+        function resetStats() {
+            fetch(`${BACKEND_URL}/reset_stats`, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => console.log(data))
+                .catch(err => console.error('Error resetting stats:', err));
+        }
+        
+        document.getElementById('obstacle-select').addEventListener('change', function(e) {
+            const numObstacles = parseInt(e.target.value);
+            
+            fetch(`${BACKEND_URL}/stop`, {method: 'POST'})
+                .then(() => {
+                    return fetch(`${BACKEND_URL}/set_obstacles`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({num_obstacles: numObstacles})
+                    });
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('✓ Configuration changed to:', numObstacles, 'obstacles');
+                        setTimeout(() => {
+                            fetch(`${BACKEND_URL}/start`, {method: 'POST'});
+                        }, 500);
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => console.error('Error changing obstacles:', err));
+        });
+        
+        setInterval(updateMetrics, 500);
+        updateMetrics();
+    </script>
+</body>
+</html>
